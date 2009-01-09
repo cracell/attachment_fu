@@ -424,9 +424,9 @@ module Technoweenie # :nodoc:
         # Resizes the given processed img object with either the attachment resize options or the thumbnail resize options.
         def resize_image_or_thumbnail!(img)
           if (!respond_to?(:parent_id) || parent_id.nil?) && attachment_options[:resize_to] # parent image
-            resize_image(img, attachment_options[:resize_to])
+            resize_image(img, evaluate_parameter(attachment_options[:resize_to])
           elsif thumbnail_resize_options # thumbnail
-            resize_image(img, thumbnail_resize_options)
+            resize_image(img, evaluate_parameter(thumbnail_resize_options))
           end
         end
 
@@ -468,6 +468,26 @@ module Technoweenie # :nodoc:
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
         end
+        
+        # Determine what the parameter is and handle it
+         # Options are
+         #   1. String "100x50"
+         #   2. Array  [100,50]
+         #   2. Method to return one of the above
+         #
+         def evaluate_parameter(param)
+           return param if param.is_a?(String)
+
+           return param if param.is_a?(Array) && param.length > 1
+
+           param = param[0] if param.is_a?(Array)
+
+           if param.is_a?(Symbol) && self.respond_to?(param)
+             self.send param
+           else
+             param
+           end
+         end
     end
   end
 end
